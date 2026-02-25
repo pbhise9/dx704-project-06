@@ -1,0 +1,47 @@
+Used chatGpt to fix the issue in Part#3 
+
+ 
+---------------------------------------------------------------------------
+LinAlgError                               Traceback (most recent call last)
+Cell In[19], line 37
+     33         rhs += p * reward_discomfort(s, a, sp)
+     35     b[i] = rhs
+---> 37 V_vec = np.linalg.solve(A, b)
+     38 expected_discomfort = {s: -V_vec[idx[s]] for s in state_list}
+
+File /usr/local/python/3.12.1/lib/python3.12/site-packages/numpy/linalg/_linalg.py:452, in solve(a, b)
+    449 signature = 'DD->D' if isComplexType(t) else 'dd->d'
+    450 with errstate(call=_raise_linalgerror_singular, invalid='call',
+    451               over='ignore', divide='ignore', under='ignore'):
+--> 452     r = gufunc(a, b, signature=signature)
+    454 return wrap(r.astype(result_t, copy=False))
+
+File /usr/local/python/3.12.1/lib/python3.12/site-packages/numpy/linalg/_linalg.py:145, in _raise_linalgerror_singular(err, flag)
+    144 def _raise_linalgerror_singular(err, flag):
+--> 145     raise LinAlgError("Singular matrix")
+
+LinAlgError: Singular matrix
+
+A singular matrix means your MDP (under the policy you loaded) does not have a unique finite undiscounted value for all states using the equation 
+𝑉
+=
+𝑟
++
+𝑃
+𝑉
+V=r+PV. In practice, for this assignment it usually happens because:
+
+you included terminal/absorbing states in the linear system but didn’t constrain them properly and/or
+
+there are states that are not reachable / have no defined action in the policy file, creating “free” equations and/or
+
+the policy induces a closed class with no terminal boundary, making the undiscounted sum not uniquely defined.
+
+Fix that works 
+
+Use discounted policy evaluation (the assignment earlier used Markov reward process style; many graders expect γ=0.99). Discounting makes 
+𝐼
+−
+𝛾
+𝑃
+I−γP invertible in typical cases and avoids singularity.
